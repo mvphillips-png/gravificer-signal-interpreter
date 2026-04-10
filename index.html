@@ -205,8 +205,8 @@
 
   /* INPUT PANEL */
   .input-panel {
-    background: var(--bg2);
-    border: 1px solid var(--border);
+    background: #e8eaed;
+    border: 1px solid rgba(0,0,0,0.1);
     border-radius: var(--radius);
     padding: 20px 24px;
     margin-bottom: 16px;
@@ -214,8 +214,8 @@
   }
 
   .input-panel:focus-within {
-    border-color: var(--border-active);
-    box-shadow: 0 0 0 3px rgba(45,212,255,0.06);
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(45,212,255,0.15);
   }
 
   .input-label {
@@ -223,7 +223,7 @@
     font-weight: 600;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--text-tertiary);
+    color: #6b7280;
     margin-bottom: 12px;
     display: block;
   }
@@ -236,15 +236,15 @@
     font-family: 'Inter', sans-serif;
     font-size: 17px;
     font-weight: 400;
-    color: var(--text-primary);
+    color: #111827;
     resize: none;
     min-height: 80px;
     line-height: 1.65;
-    caret-color: var(--cyan);
+    caret-color: #111827;
   }
 
   .input-field::placeholder {
-    color: var(--text-tertiary);
+    color: #9ca3af;
     font-style: italic;
   }
 
@@ -252,7 +252,7 @@
   .char-counter {
     font-size: 12px;
     font-weight: 500;
-    color: var(--text-tertiary);
+    color: #9ca3af;
     text-align: right;
     margin-top: 10px;
     transition: color 0.2s;

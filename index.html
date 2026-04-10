@@ -735,6 +735,15 @@ Respond ONLY with a valid JSON object in this format (no markdown, no preamble, 
       });
 
       const data = await response.json();
+
+      if (!data.content) {
+        errorMsg.textContent = '⚠ API response: ' + JSON.stringify(data).slice(0, 200);
+        errorMsg.classList.add('active');
+        loader.classList.remove('active');
+        btn.disabled = false;
+        return;
+      }
+
       const rawText = data.content.map(b => b.text || '').join('');
       const clean = rawText.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(clean);

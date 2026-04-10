@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gravificer Signal Interpreter</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #04060a;
+    --bg2: #080c14;
+    --cyan: #00f5ff;
+    --magenta: #ff00cc;
+    --amber: #ffb300;
+    --cyan-dim: rgba(0,245,255,0.15);
+    --magenta-dim: rgba(255,0,204,0.12);
+    --amber-dim: rgba(255,179,0,0.12);
+    --text: #c8d8e8;
+    --text-dim: #4a6070;
+    --grid: rgba(0,245,255,0.04);
+    --border: rgba(0,245,255,0.18);
+    --border-hot: rgba(0,245,255,0.55);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Exo 2', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* SCANLINES */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* HEADER */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .brand-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--cyan);
+    text-transform: uppercase;
+    opacity: 0.7;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(22px, 5vw, 38px);
+    font-weight: 900;
+    letter-spacing: 2px;
+    line-height: 1.1;
+    color: #fff;
+    text-shadow:
+      0 0 20px rgba(0,245,255,0.4),
+      0 0 60px rgba(0,245,255,0.15);
+    margin-bottom: 6px;
+  }
+
+  .title span {
+    color: var(--cyan);
+  }
+
+  .subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    margin-top: 10px;
+  }
+
+  /* DIVIDER */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    opacity: 0.3;
+  }
+  .divider-icon {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--cyan);
+    opacity: 0.5;
+    letter-spacing: 3px;
+  }
+
+  /* INPUT PANEL */
+  .input-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 28px;
+    margin-bottom: 24px;
+    position: relative;
+    transition: border-color 0.3s;
+  }
+
+  .input-panel:focus-within {
+    border-color: var(--border-hot);
+    box-shadow: 0 0 30px rgba(0,245,255,0.06);
+  }
+
+  .input-panel::before {
+    content: 'SIGNAL INPUT';
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: var(--bg2);
+    padding: 0 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    opacity: 0.6;
+  }
+
+  .input-field {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'Exo 2', sans-serif;
+    font-size: 18px;
+    font-weight: 300;
+    color: #fff;
+    resize: none;
+    min-height: 80px;
+    line-height: 1.6;
+    caret-color: var(--cyan);
+  }
+
+  .input-field::placeholder {
+    color: var(--text-dim);
+    opacity: 0.5;
+    font-style: italic;
+  }
+
+  /* SUBMIT BUTTON */
+  .submit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 16px 32px;
+    background: transparent;
+    border: 1px solid var(--cyan);
+    border-radius: 2px;
+    color: var(--cyan);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--cyan);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s;
+    z-index: 0;
+  }
+
+  .submit-btn:hover::before { transform: scaleX(1); }
+  .submit-btn:hover { color: var(--bg); box-shadow: 0 0 30px rgba(0,245,255,0.25); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .submit-btn:disabled::before { transform: scaleX(0) !important; }
+
+  .submit-btn span { position: relative; z-index: 1; }
+
+  /* LOADER */
+  .loader {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .loader.active { display: flex; }
+
+  .loader-bars {
+    display: flex;
+    gap: 5px;
+    align-items: flex-end;
+    height: 32px;
+  }
+
+  .loader-bar {
+    width: 4px;
+    background: var(--cyan);
+    border-radius: 2px;
+    animation: barPulse 1.1s ease-in-out infinite;
+    box-shadow: 0 0 8px var(--cyan);
+  }
+
+  .loader-bar:nth-child(1) { animation-delay: 0s; }
+  .loader-bar:nth-child(2) { animation-delay: 0.15s; }
+  .loader-bar:nth-child(3) { animation-delay: 0.3s; }
+  .loader-bar:nth-child(4) { animation-delay: 0.45s; }
+  .loader-bar:nth-child(5) { animation-delay: 0.6s; }
+
+  @keyframes barPulse {
+    0%, 100% { height: 8px; opacity: 0.4; }
+    50% { height: 30px; opacity: 1; }
+  }
+
+  .loader-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cyan);
+    opacity: 0.7;
+    animation: textBlink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes textBlink {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.9; }
+  }
+
+  /* OUTPUT PANEL */
+  .output-panel {
+    display: none;
+    animation: panelIn 0.5s ease-out forwards;
+  }
+
+  .output-panel.active { display: block; }
+
+  @keyframes panelIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SIGNAL ECHO */
+  .signal-echo {
+    background: rgba(0,245,255,0.04);
+    border-left: 3px solid var(--cyan);
+    padding: 14px 20px;
+    margin-bottom: 24px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--cyan);
+    opacity: 0.8;
+  }
+
+  .signal-echo-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    opacity: 0.5;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* SECTION CARDS */
+  .section-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 26px 28px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+
+  .section-card.noise { border-color: rgba(255,0,204,0.3); }
+  .section-card.signal { border-color: rgba(0,245,255,0.3); }
+  .section-card.reframe { border-color: rgba(255,179,0,0.35); }
+  .section-card.question { border-color: rgba(0,245,255,0.18); }
+
+  .section-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.2;
+  }
+
+  .noise .section-label { color: var(--magenta); }
+  .signal .section-label { color: var(--cyan); }
+  .reframe .section-label { color: var(--amber); }
+  .question .section-label { color: var(--text-dim); }
+
+  .section-body {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    line-height: 1.75;
+    color: var(--text);
+  }
+
+  .section-card.reframe .section-body {
+    color: #fff;
+    font-size: 17px;
+    font-weight: 400;
+  }
+
+  /* VERDICT */
+  .verdict {
+    background: linear-gradient(135deg, rgba(0,245,255,0.06), rgba(255,179,0,0.04));
+    border: 1px solid rgba(255,179,0,0.3);
+    border-radius: 2px;
+    padding: 28px;
+    margin-bottom: 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .verdict::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--amber), transparent);
+    opacity: 0.6;
+  }
+
+  .verdict-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--amber);
+    opacity: 0.6;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .verdict-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(14px, 3vw, 20px);
+    font-weight: 700;
+    color: var(--amber);
+    text-shadow: 0 0 20px rgba(255,179,0,0.4);
+    line-height: 1.3;
+  }
+
+  /* RESET BUTTON */
+  .reset-btn {
+    display: block;
+    margin: 24px auto 0;
+    padding: 10px 28px;
+    background: transparent;
+    border: 1px solid var(--text-dim);
+    border-radius: 2px;
+    color: var(--text-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .reset-btn:hover {
+    border-color: var(--cyan);
+    color: var(--cyan);
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    margin-top: 60px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(0,245,255,0.08);
+  }
+
+  .footer-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    opacity: 0.5;
+  }
+
+  .footer-text span { color: var(--cyan); opacity: 1; }
+
+  /* INTRO BLOCK */
+  .intro-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 28px 32px;
+    margin-bottom: 36px;
+    position: relative;
+  }
+
+  .intro-block::before {
+    content: 'WHAT IS THIS';
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: var(--bg2);
+    padding: 0 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    opacity: 0.7;
+  }
+
+  .intro-lead {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: #fff;
+    line-height: 1.65;
+    margin-bottom: 16px;
+  }
+
+  .intro-lead em {
+    color: var(--cyan);
+    font-style: normal;
+    font-weight: 600;
+  }
+
+  .intro-body {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.8;
+    margin-bottom: 20px;
+  }
+
+  .intro-pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .pillar {
+    padding: 12px 14px;
+    border-radius: 2px;
+    text-align: center;
+  }
+
+  .pillar.noise-p { background: rgba(255,0,204,0.06); border: 1px solid rgba(255,0,204,0.2); }
+  .pillar.signal-p { background: rgba(0,245,255,0.05); border: 1px solid rgba(0,245,255,0.2); }
+  .pillar.reframe-p { background: rgba(255,179,0,0.05); border: 1px solid rgba(255,179,0,0.2); }
+
+  .pillar-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .noise-p .pillar-name { color: var(--magenta); }
+  .signal-p .pillar-name { color: var(--cyan); }
+  .reframe-p .pillar-name { color: var(--amber); }
+
+  .pillar-desc {
+    font-family: 'Exo 2', sans-serif;
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .intro-cta {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--cyan);
+    opacity: 0.7;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+    letter-spacing: 1px;
+  }
+
+  /* ERROR STATE */
+  .error-msg {
+    display: none;
+    background: rgba(255,0,204,0.06);
+    border: 1px solid rgba(255,0,204,0.3);
+    border-radius: 2px;
+    padding: 16px 20px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--magenta);
+    margin-bottom: 24px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+
+  .error-msg.active { display: block; }
+
+  /* CORNER ACCENTS */
+  .corner-accent {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    opacity: 0.2;
+    pointer-events: none;
+  }
+
+  .corner-accent.tl { top: 20px; left: 20px; border-top: 2px solid var(--cyan); border-left: 2px solid var(--cyan); }
+  .corner-accent.tr { top: 20px; right: 20px; border-top: 2px solid var(--cyan); border-right: 2px solid var(--cyan); }
+  .corner-accent.bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--magenta); border-left: 2px solid var(--magenta); }
+  .corner-accent.br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--magenta); border-right: 2px solid var(--magenta); }
+</style>
+</head>
+<body>
+
+<div class="corner-accent tl"></div>
+<div class="corner-accent tr"></div>
+<div class="corner-accent bl"></div>
+<div class="corner-accent br"></div>
+
+<div class="wrapper">
+
+  <div class="header">
+    <span class="brand-tag">// GRAVIFICER SYSTEM //</span>
+    <h1 class="title">SIGNAL <span>INTERPRETER</span></h1>
+    <p class="subtitle">[ CLARIFY · REVEAL · REFRAME ]</p>
+  </div>
+
+  <div class="divider"><span class="divider-icon">◈</span></div>
+
+  <div class="intro-block">
+    <p class="intro-lead">
+      Most of what we carry around isn't the real problem —
+      it's <em>noise</em> layered over the thing that actually matters.
+    </p>
+    <p class="intro-body">
+      Gravificer is a creative philosophy built around one principle: every output must clarify, reveal, or reframe — otherwise it is noise. The Signal Interpreter applies that philosophy to whatever you bring to it. Drop in a word, a situation, a belief, a creative block, a decision you can't make. The AI engine strips the noise, surfaces the real signal underneath, and hands you a reframe — a new way of seeing that changes what's possible.
+    </p>
+
+    <div class="intro-pillars">
+      <div class="pillar noise-p">
+        <span class="pillar-name">Noise</span>
+        <span class="pillar-desc">The false signal — distortion, assumption, and mental fog</span>
+      </div>
+      <div class="pillar signal-p">
+        <span class="pillar-name">Signal</span>
+        <span class="pillar-desc">What's actually true — the real force beneath the surface</span>
+      </div>
+      <div class="pillar reframe-p">
+        <span class="pillar-name">Reframe</span>
+        <span class="pillar-desc">A new way of seeing that shifts the stakes entirely</span>
+      </div>
+    </div>
+
+    <p class="intro-cta">
+      ⬡ &nbsp;Type anything below — a word, a phrase, or a whole situation. No wrong inputs.
+    </p>
+  </div>
+
+  <div class="input-panel">
+    <textarea
+      class="input-field"
+      id="signalInput"
+      placeholder="e.g. 'I don't have time to be creative anymore'  —  or a single word, a phrase, a whole situation..."
+      rows="3"
+    ></textarea>
+  </div>
+
+  <button class="submit-btn" id="submitBtn" onclick="interpretSignal()">
+    <span>⬡ Interpret Signal</span>
+  </button>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <div class="loader" id="loader">
+    <div class="loader-bars">
+      <div class="loader-bar"></div>
+      <div class="loader-bar"></div>
+      <div class="loader-bar"></div>
+      <div class="loader-bar"></div>
+      <div class="loader-bar"></div>
+    </div>
+    <div class="loader-text">PROCESSING SIGNAL...</div>
+  </div>
+
+  <div class="output-panel" id="outputPanel">
+
+    <div class="signal-echo" id="signalEcho">
+      <span class="signal-echo-label">RECEIVED SIGNAL</span>
+      <span id="echoText"></span>
+    </div>
+
+    <div class="section-card noise">
+      <div class="section-label">◈ Noise</div>
+      <div class="section-body" id="noiseText"></div>
+    </div>
+
+    <div class="section-card signal">
+      <div class="section-label">◈ Signal</div>
+      <div class="section-body" id="signalText"></div>
+    </div>
+
+    <div class="section-card reframe">
+      <div class="section-label">◈ Reframe</div>
+      <div class="section-body" id="reframeText"></div>
+    </div>
+
+    <div class="verdict" id="verdictCard">
+      <span class="verdict-label">[ GRAVIFICER TRANSMISSION ]</span>
+      <div class="verdict-text" id="verdictText"></div>
+    </div>
+
+    <div class="section-card question">
+      <div class="section-label">◈ Signal Question</div>
+      <div class="section-body" id="questionText"></div>
+    </div>
+
+    <button class="reset-btn" onclick="resetTool()">⟳ New Signal</button>
+
+  </div>
+
+  <div class="footer">
+    <p class="footer-text">GRAVIFICER SIGNAL INTERPRETER · <span>POWERED BY AI</span> · EVERY OUTPUT MUST CLARIFY, REVEAL, OR REFRAME</p>
+  </div>
+
+</div>
+
+<script>
+  const SYSTEM_PROMPT = `You are the Gravificer Signal Interpreter — an intelligence engine built on the Gravificer philosophy: transform art, energy, and knowledge into intentional signals that shape perception. Every output must clarify, reveal, or reframe — otherwise it is noise. Simplicity carries power. No filler, no generic phrasing.
+
+Your task: analyze whatever the user submits — a word, phrase, idea, problem, or situation — and return a structured JSON object with exactly these five fields:
+
+- noise: What false signal, distortion, or mental fog surrounds this? What is the person probably telling themselves that obscures the real issue? Be specific and direct. 2-3 sentences.
+- signal: What is actually true here — the core signal beneath the surface? Strip away emotion, assumption, and habit. What is the real force at work? 2-3 sentences.
+- reframe: A single, powerful reframe statement. Not advice. Not comfort. A new way of seeing the thing that changes the stakes. This is the Gravificer transmission — make it memorable, precise, and energizing. 1-2 sentences max.
+- verdict: A punchy, unforgettable closing declaration — 10 words or fewer. This is the signal distilled to its sharpest form. Like a frequency marker, not a summary.
+- question: One precise question the person should sit with. Not rhetorical. A real question that unlocks the next move. One sentence.
+
+Respond ONLY with a valid JSON object in this format (no markdown, no preamble, no explanation):
+{
+  "noise": "...",
+  "signal": "...",
+  "reframe": "...",
+  "verdict": "...",
+  "question": "..."
+}`;
+
+  async function interpretSignal() {
+    const input = document.getElementById('signalInput').value.trim();
+    if (!input) return;
+
+    const btn = document.getElementById('submitBtn');
+    const loader = document.getElementById('loader');
+    const outputPanel = document.getElementById('outputPanel');
+    const errorMsg = document.getElementById('errorMsg');
+
+    btn.disabled = true;
+    loader.classList.add('active');
+    outputPanel.classList.remove('active');
+    errorMsg.classList.remove('active');
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: "user", content: input }]
+        })
+      });
+
+      const data = await response.json();
+      const rawText = data.content.map(b => b.text || '').join('');
+      const clean = rawText.replace(/```json|```/g, '').trim();
+      const parsed = JSON.parse(clean);
+
+      document.getElementById('echoText').textContent = input;
+      document.getElementById('noiseText').textContent = parsed.noise;
+      document.getElementById('signalText').textContent = parsed.signal;
+      document.getElementById('reframeText').textContent = parsed.reframe;
+      document.getElementById('verdictText').textContent = parsed.verdict;
+      document.getElementById('questionText').textContent = parsed.question;
+
+      loader.classList.remove('active');
+      outputPanel.classList.add('active');
+
+    } catch (err) {
+      loader.classList.remove('active');
+      errorMsg.textContent = '⚠ Signal transmission failed. Check connection and try again.';
+      errorMsg.classList.add('active');
+      btn.disabled = false;
+    }
+  }
+
+  function resetTool() {
+    document.getElementById('signalInput').value = '';
+    document.getElementById('outputPanel').classList.remove('active');
+    document.getElementById('errorMsg').classList.remove('active');
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('signalInput').focus();
+  }
+
+  document.getElementById('signalInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) interpretSignal();
+  });
+</script>
+
+</body>
+</html>

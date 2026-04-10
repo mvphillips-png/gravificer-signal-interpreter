@@ -542,6 +542,32 @@
     letter-spacing: 1px;
   }
 
+  /* CHAR COUNTER */
+  .char-counter {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+    margin-top: 8px;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+  }
+  .char-counter.warn { color: var(--amber); }
+  .char-counter.limit { color: var(--magenta); }
+
+  /* CHAR COUNTER */
+  .char-counter {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: right;
+    margin-top: 8px;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+  }
+  .char-counter.warn { color: var(--amber); }
+  .char-counter.limit { color: var(--magenta); }
+
   /* ERROR STATE */
   .error-msg {
     display: none;
@@ -626,7 +652,10 @@
       id="signalInput"
       placeholder="e.g. 'I don't have time to be creative anymore'  —  or a single word, a phrase, a whole situation..."
       rows="3"
+      maxlength="500"
+      oninput="updateCounter()"
     ></textarea>
+    <div class="char-counter" id="charCounter">0 / 500</div>
   </div>
 
   <button class="submit-btn" id="submitBtn" onclick="interpretSignal()">
@@ -708,9 +737,41 @@ Respond ONLY with a valid JSON object in this format (no markdown, no preamble, 
   "question": "..."
 }`;
 
+  const MAX_CHARS = 500;
+  let lastSubmitTime = 0;
+  const RATE_LIMIT_MS = 5000; // 5 seconds between submissions
+
+  function updateCounter() {
+    const input = document.getElementById('signalInput');
+    const counter = document.getElementById('charCounter');
+    const len = input.value.length;
+    counter.textContent = len + ' / ' + MAX_CHARS;
+    counter.className = 'char-counter' + (len >= MAX_CHARS ? ' limit' : len >= 400 ? ' warn' : '');
+  }
+
   async function interpretSignal() {
     const input = document.getElementById('signalInput').value.trim();
     if (!input) return;
+
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastSubmitTime < RATE_LIMIT_MS) {
+      const errorMsg = document.getElementById('errorMsg');
+      errorMsg.textContent = '⚠ Please wait a moment before sending another signal.';
+      errorMsg.classList.add('active');
+      setTimeout(() => errorMsg.classList.remove('active'), 3000);
+      return;
+    }
+
+    // Input length check
+    if (input.length > MAX_CHARS) {
+      const errorMsg = document.getElementById('errorMsg');
+      errorMsg.textContent = '⚠ Signal too long. Keep it under 500 characters.';
+      errorMsg.classList.add('active');
+      return;
+    }
+
+    lastSubmitTime = now;
 
     const btn = document.getElementById('submitBtn');
     const loader = document.getElementById('loader');
@@ -737,7 +798,7 @@ Respond ONLY with a valid JSON object in this format (no markdown, no preamble, 
       const data = await response.json();
 
       if (!data.content) {
-        errorMsg.textContent = '⚠ API response: ' + JSON.stringify(data).slice(0, 200);
+        errorMsg.textContent = '⚠ Signal transmission failed. Please try again shortly.';
         errorMsg.classList.add('active');
         loader.classList.remove('active');
         btn.disabled = false;
@@ -768,6 +829,8 @@ Respond ONLY with a valid JSON object in this format (no markdown, no preamble, 
 
   function resetTool() {
     document.getElementById('signalInput').value = '';
+    document.getElementById('charCounter').textContent = '0 / 500';
+    document.getElementById('charCounter').className = 'char-counter';
     document.getElementById('outputPanel').classList.remove('active');
     document.getElementById('errorMsg').classList.remove('active');
     document.getElementById('submitBtn').disabled = false;

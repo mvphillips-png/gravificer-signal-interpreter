@@ -751,7 +751,7 @@ Respond ONLY with a valid JSON object in this format (no markdown, no preamble, 
 
     } catch (err) {
       loader.classList.remove('active');
-      errorMsg.textContent = '⚠ Signal transmission failed. Check connection and try again.';
+      errorMsg.textContent = '⚠ Error: ' + err.message;
       errorMsg.classList.add('active');
       btn.disabled = false;
     }
